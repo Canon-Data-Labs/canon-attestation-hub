@@ -1,0 +1,4 @@
+.form { display: flex; flex-direction: column; gap: 14px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+.success { color: var(--accent); font-size: 12px; word-break: break-all; }
+.error { color: var(--danger); font-size: 12px; }
