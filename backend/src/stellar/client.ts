@@ -5,7 +5,6 @@ import {
   SorobanRpc,
   TransactionBuilder,
   BASE_FEE,
-  xdr,
   nativeToScVal,
   scValToNative,
 } from "@stellar/stellar-sdk";
@@ -13,26 +12,36 @@ import {
 const server = new SorobanRpc.Server(
   process.env.SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org"
 );
-const networkPassphrase = process.env.STELLAR_NETWORK === "mainnet"
-  ? Networks.PUBLIC
-  : Networks.TESTNET;
+const networkPassphrase =
+  process.env.STELLAR_NETWORK === "mainnet" ? Networks.PUBLIC : Networks.TESTNET;
 
-const CONTRACT_ID = process.env.ATTESTATION_CONTRACT_ID ?? "";
+function getContractId(): string {
+  const id = process.env.ATTESTATION_CONTRACT_ID;
+  if (!id) throw new Error("ATTESTATION_CONTRACT_ID is not set");
+  return id;
+}
+
+/** Poll until a submitted transaction is confirmed or fails (max ~30s). */
+async function pollTx(hash: string): Promise<SorobanRpc.Api.GetTransactionResponse> {
+  for (let i = 0; i < 15; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const result = await server.getTransaction(hash);
+    if (result.status !== SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) return result;
+  }
+  throw new Error(`Transaction ${hash} not confirmed after 30s`);
+}
 
 export async function submitAttestation(params: {
   proverSecret: string;
   modelId: string;
-  datasetMerkleRoot: string; // hex
-  proofHash: string;         // hex
+  datasetMerkleRoot: string;
+  proofHash: string;
 }): Promise<string> {
   const keypair = Keypair.fromSecret(params.proverSecret);
   const account = await server.getAccount(keypair.publicKey());
-  const contract = new Contract(CONTRACT_ID);
+  const contract = new Contract(getContractId());
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase,
-  })
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
     .addOperation(
       contract.call(
         "submit_attestation",
@@ -47,20 +56,26 @@ export async function submitAttestation(params: {
 
   const prepared = await server.prepareTransaction(tx);
   prepared.sign(keypair);
-  const result = await server.sendTransaction(prepared);
-  return result.hash;
+  const sent = await server.sendTransaction(prepared);
+  if (sent.status === "ERROR") throw new Error(`Submit failed: ${sent.errorResult}`);
+
+  const confirmed = await pollTx(sent.hash);
+  if (confirmed.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+    throw new Error(`Transaction failed: ${confirmed.status}`);
+  }
+  return sent.hash;
 }
 
 export async function getAttestation(proofHash: string) {
-  const contract = new Contract(CONTRACT_ID);
-  const keypair = Keypair.random();
-  const account = await server.getAccount(keypair.publicKey()).catch(() => null);
-  if (!account) throw new Error("Cannot fetch account for simulation");
+  const contract = new Contract(getContractId());
 
-  const tx = new TransactionBuilder(account, {
-    fee: BASE_FEE,
-    networkPassphrase,
-  })
+  // Use a well-known testnet/mainnet friendbot-funded account for simulation,
+  // or fall back to the contract's own account as source (read-only sim only needs a valid account).
+  const sourceKey = process.env.SOROBAN_SOURCE_PUBLIC_KEY;
+  if (!sourceKey) throw new Error("SOROBAN_SOURCE_PUBLIC_KEY is not set for read simulation");
+
+  const account = await server.getAccount(sourceKey);
+  const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
     .addOperation(
       contract.call(
         "get_attestation",

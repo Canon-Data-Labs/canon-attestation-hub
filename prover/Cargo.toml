@@ -14,19 +14,10 @@ path = "src/lib.rs"
 
 [dependencies]
 sha2 = "0.10"
+hex = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
-hex = "0.4"
-
-# ZK proving backend (Groth16 via arkworks)
-ark-bn254 = "0.4"
-ark-groth16 = "0.4"
-ark-relations = "0.4"
-ark-r1cs-std = "0.4"
-ark-ff = "0.4"
-ark-std = "0.4"
-rand = "0.8"
 anyhow = "1"
 
 [profile.release]

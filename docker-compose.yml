@@ -8,9 +8,10 @@ services:
     ports:
       - "3001:3001"
     env_file: .env
+    environment:
+      PROVER_BIN: /usr/local/bin/canon-prover
     volumes:
       - ./prover/target/release/canon-prover:/usr/local/bin/canon-prover:ro
-    depends_on: []
 
   frontend:
     build:

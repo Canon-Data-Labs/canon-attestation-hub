@@ -2,7 +2,7 @@
 import { useState } from "react";
 import styles from "./SubmitForm.module.css";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export default function SubmitForm() {
   const [form, setForm] = useState({
@@ -28,6 +28,7 @@ export default function SubmitForm() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setResult(data);
     } catch (err: any) {
       setResult({ error: err.message });
