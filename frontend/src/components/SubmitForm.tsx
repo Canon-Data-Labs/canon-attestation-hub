@@ -3,6 +3,12 @@ import { useState } from "react";
 import styles from "./SubmitForm.module.css";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const STELLAR_NETWORK = process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? process.env.STELLAR_NETWORK ?? "testnet";
+
+function stellarExpertTxUrl(txHash: string) {
+  const explorerNetwork = STELLAR_NETWORK.toLowerCase() === "mainnet" ? "public" : "testnet";
+  return `https://stellar.expert/explorer/${explorerNetwork}/tx/${txHash}`;
+}
 
 export default function SubmitForm() {
   const [form, setForm] = useState({
@@ -54,7 +60,13 @@ export default function SubmitForm() {
       <button type="submit" disabled={loading}>{loading ? "Submitting…" : "Submit Attestation"}</button>
       {result && (
         <div className={result.error ? styles.error : styles.success}>
-          {result.error ? `Error: ${result.error}` : `TX: ${result.txHash}`}
+          {result.error ? (
+            `Error: ${result.error}`
+          ) : result.txHash ? (
+            <a href={stellarExpertTxUrl(result.txHash)} target="_blank" rel="noreferrer">
+              TX: {result.txHash}
+            </a>
+          ) : null}
         </div>
       )}
     </form>
