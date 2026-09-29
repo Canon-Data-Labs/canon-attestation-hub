@@ -15,7 +15,8 @@ pub fn merkle_root(leaves: &[String]) -> Vec<u8> {
                 hasher.finalize().to_vec()
             });
             let mut arr = [0u8; 32];
-            arr.copy_from_slice(&bytes[..32.min(bytes.len())]);
+            let len = bytes.len().min(32);
+            arr[..len].copy_from_slice(&bytes[..len]);
             arr
         })
         .collect();

@@ -165,6 +165,12 @@ canon-attestation-hub/
 
 ---
 
+## Contributing
+
+We welcome contributions! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup, testing instructions, and pull request guidelines.
+
+---
+
 ## Related
 
 - [canon-provenance-ledger](https://github.com/your-org/canon-provenance-ledger) — the on-chain registry of authorized training files
