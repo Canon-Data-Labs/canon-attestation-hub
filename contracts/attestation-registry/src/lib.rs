@@ -1,6 +1,7 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, panic_with_error, Address, Bytes, Env, String,
+    contract, contracterror, contractimpl, contracttype, panic_with_error, Address, Bytes, Env,
+    String,
 };
 
 /// Ledger TTL extension for persistent attestation entries (~1 year in ledgers at ~5s/ledger)
